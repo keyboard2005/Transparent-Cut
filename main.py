@@ -1,8 +1,10 @@
-import sys
 import subprocess
 import shutil
 from pathlib import Path
 from PIL import Image
+
+# alpha 阈值：低于此值的像素视为透明，越大裁得越激进
+ALPHA_THRESHOLD = 128
 
 
 def trim_transparent(image_path: str) -> None:
@@ -18,7 +20,8 @@ def trim_transparent(image_path: str) -> None:
 
     img = Image.open(path).convert("RGBA")
 
-    bbox = img.getchannel("A").getbbox()
+    alpha = img.getchannel("A").point(lambda x: 255 if x >= ALPHA_THRESHOLD else 0)
+    bbox = alpha.getbbox()
     if bbox is None:
         print("[错误] 图片完全透明，无内容可裁剪。")
         return
@@ -70,7 +73,7 @@ def main():
 
     while True:
         try:
-            raw = input("图片路径> ").strip()
+            raw = input("图片路径> ").strip().strip("'\"")
         except (EOFError, KeyboardInterrupt):
             print("\n已退出。")
             break
